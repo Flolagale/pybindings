@@ -29,13 +29,25 @@ class TagFile(object):
         """
         print('Retrieving methods for class ' + className + '.')
         methodRegex = re.compile(r'\tf\tclass:' + className + '$')
-        #prototypeRegex = re.compile(r'/^\s*)
-        #  \/\^\s*(const)?\s+(\w+)(::)?(\w+)?(&\|*)?\s+(\w+)
         for line in open(self._file):
             if methodRegex.search(line):
                 print(line)
                 # Get the prototype of the method.
-                methods.append(line.strip().split()[0])
+                method = CPPMethod(line.strip())
+                #methods.append(line.strip().split()[0])
+
+
+class CPPValue(object):
+    """
+    CPPValue represents a C++ value type,
+    that is, a type and its attributes (const and/or pointer or reference).
+    """
+    def __init__(self, valueString):
+        pass
+
+    @staticmethod
+    def getPattern():
+        return r'(const)?\s+(\w+)(::)?(\w+)?\s*(&\|*)?'
 
 
 class CPPMethod(object):
@@ -48,8 +60,14 @@ class CPPMethod(object):
     So:
     [const]? [namespace]? [return value] [reference or pointer]? [method name] [parameter 1]? [const]?
     """
-    def __init__(self):
-        pass
+    def __init__(self, prototypeString):
+        print CPPMethod.getPattern()
+        prototypeRegex = re.compile(self.getPattern())
+        print(prototypeRegex.search(prototypeString).groups())
+
+    @staticmethod
+    def getPattern():
+        return r'\/\^\s*' + CPPValue.getPattern() + r'\s+(\w+)'
 
 
 def parseHeader(headerPath):
@@ -81,4 +99,4 @@ if __name__ == '__main__':
     print(classes)
     for currentClass in classes:
         methods = []
-        tagFile.retrieveMethodsForClass(currentClass)
+        tagFile.retrieveMethodsForClass(currentClass, methods)
