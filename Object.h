@@ -4,7 +4,7 @@ class Object
 {
 public:
 	Object()
-		:m_integer(2), m_message('Hello Kitty!') {}
+		:m_integer(2), m_message("Hello Kitty!") {}
 	~Object() {}
 
 	void setInteger(int integer) {this->m_integer = integer;}
