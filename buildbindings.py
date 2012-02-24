@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import os
 import re
+from cppentities import *
 
 
 class TagFile(object):
@@ -10,7 +11,7 @@ class TagFile(object):
     def __init__(self, tagFile):
         self._file = tagFile
 
-    def generateClassesCollection(self, classes):
+    def generateClassNames(self, classes):
         """
         Retrieve all the classes defined in the tagfile.
         """
@@ -21,31 +22,33 @@ class TagFile(object):
                 # Get the tag name, its the name of the class.
                 classes.append(line.strip().split()[0])
 
-    def retrieveMethodsForClass(self, className, methods):
+    def retrieveMethodsForClass(self, class_):
         """
         Retrieve all the methods prototypes corresponding
         to the given class name.
         """
-        print('Retrieving methods for class ' + className + '.')
-        methodRegex = re.compile(r'\tf\tclass:' + className + '$')
+        print('Retrieving methods for class ' + class_.getName() + '.')
+        methodRegex = re.compile(r'^\s*~?\w+\s+.*\tf\tclass:' + class_.getName() + '$')
         for line in open(self._file):
             if methodRegex.search(line):
                 print(line)
                 # Get the prototype of the method, constructor or destructor
                 # contained in the line.
-                classEntity = None
                 try:
                     method = CPPMethod(line.strip())
+                    class_.addMethod(method)
                 except ValueError:
                     try:
-                        method = CPPConstructor(line.strip())
+                        constructor = CPPConstructor(line.strip())
+                        class_.addConstructor(constructor)
                     except ValueError:
                         try:
-                            method = CPPDestructor(line.strip())
+                            destructor = CPPDestructor(line.strip())
+                            class_.addDestructor(destructor)
                         except ValueError:
                             raise Exception("The given line does not appear to ba a valid C++ prototype line at all...")
                 print("---------------------")
-                #methods.append(line.strip().split()[0])
+        print(class_)
 
 
 def parseHeader(headerPath):
@@ -72,9 +75,10 @@ if __name__ == '__main__':
     generateTagsForCurrentDir(tagFilePath)
 
     tagFile = TagFile(tagFilePath)
+    classNames = []
+    tagFile.generateClassNames(classNames)
+    print('Classes found in tags file:\n' + str(classNames))
     classes = []
-    tagFile.generateClassesCollection(classes)
-    print('Classes found in tags file:\n' + str(classes))
-    for currentClass in classes:
-        methods = []
-        tagFile.retrieveMethodsForClass(currentClass, methods)
+    for className in classNames:
+        newClass = CPPClass(className)
+        tagFile.retrieveMethodsForClass(newClass)
