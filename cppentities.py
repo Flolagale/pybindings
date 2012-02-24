@@ -6,6 +6,7 @@ class CPPClass(object):
     """A whole C++ class with all its potential constructors, methods and destructor."""
     def __init__(self, className):
         self._className = className
+        # TODO it does not make sense to use a dictionnary here, rather use members directly!
         self._entities = {'constructors': [],
                             'destructor': None,
                             'methods': []}
