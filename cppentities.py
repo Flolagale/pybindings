@@ -5,30 +5,30 @@ import re
 class CPPClass(object):
     """A whole C++ class with all its potential constructors, methods and destructor."""
     def __init__(self, className):
-        self._className = className
-        # TODO it does not make sense to use a dictionnary here, rather use members directly!
-        self._entities = {'constructors': [],
-                            'destructor': None,
-                            'methods': []}
+        # Set default values.
+        self._name = className
+        self._constructors = []
+        self._destructor = None
+        self._methods = []
 
     def getName(self):
-        return self._className
+        return self._name
 
     def addConstructor(self, constructor):
-        self._entities['constructors'].append(constructor)
+        self._constructors.append(constructor)
 
     def addDestructor(self, destructor):
-        self._entities['destructor'] = destructor
+        self._destructor = destructor
 
     def addMethod(self, method):
-        self._entities['methods'].append(method)
+        self._methods.append(method)
 
     def __str__(self):
         string = ''
-        for constructor in self._entities['constructors']:
+        for constructor in self._constructors:
             string += str(constructor) + '\n'
-        string += str(self._entities['destructor']) + '\n'
-        for method in self._entities['methods']:
+        string += str(self._destructor) + '\n'
+        for method in self._methods:
             string += str(method) + '\n'
         return string
 
@@ -41,23 +41,25 @@ class CPPValue(object):
     def __init__(self, valueString):
         if re.search(CPPValue.getPattern(), valueString):
             self._match = re.search(CPPValue.getPattern(), valueString)
-            self._entities = {'const': False,
-                                'namespace': None,
-                                'type': None,
-                                'reference': False,
-                                'pointer': False}
 
-            self._entities['const'] = self._match.group(1)
+            # Set default values.
+            self._const = False
+            self._namespace = None
+            self._type = None
+            self._reference = False
+            self._pointer = False
+
+            self._const = self._match.group(1)
             if self._match.group(3):
-                self._entities['namespace'] = self._match.group(2)
-                self._entities['type'] = self._match.group(4)
-                self._entities['reference'] = (self._match.group(5) == '&')
-                self._entities['pointer'] = (self._match.group(5) == '*')
+                self._namespace = self._match.group(2)
+                self._type = self._match.group(4)
+                self._reference = (self._match.group(5) == '&')
+                self._pointer = (self._match.group(5) == '*')
             else:
-                self._entities['namespace'] = None
-                self._entities['type'] = self._match.group(2)
-                self._entities['reference'] = (self._match.group(3) == '&')
-                self._entities['pointer'] = (self._match.group(3) == '*')
+                self._namespace = None
+                self._type = self._match.group(2)
+                self._reference = (self._match.group(3) == '&')
+                self._pointer = (self._match.group(3) == '*')
         else:
             raise ValueError("The given prototypeString is not a valid C++ value.")
 
@@ -65,19 +67,19 @@ class CPPValue(object):
         return self._match.groups()
 
     def isConst(self):
-        return self._entities['const']
+        return self._const
 
     def getNamespace(self):
-        return self._entities['namespace']
+        return self._namespace
 
     def getType(self):
-        return self._entities['type']
+        return self._type
 
     def isReference(self):
-        return self._entities['reference']
+        return self._reference
 
     def isPointer(self):
-        return self._entities['pointer']
+        return self._pointer
 
     def __str__(self):
         return (str(self.isConst()) + ' ' + str(self.getNamespace()) + ' ' +
@@ -105,11 +107,14 @@ class CPPMethod(object):
     def __init__(self, prototypeString):
         if re.search(CPPMethod.getPattern(), prototypeString):
             self._match = re.search(CPPMethod.getPattern(), prototypeString)
-            self._entities = {'returnValue': None,
-                                'name': ''}
+
+            # Set default values.
+            self._returnValue = None
+            self._name = ''
+
             # The first group is a CPPValue so build it.
-            self._entities['returnValue'] = CPPValue(self._match.group(1))
-            self._entities['name'] = self._match.group(2)
+            self._returnValue = CPPValue(self._match.group(1))
+            self._name = self._match.group(2)
         else:
             raise ValueError("The given prototypeString is not a valid C++ method prototype.")
 
@@ -117,10 +122,10 @@ class CPPMethod(object):
         return self._match.groups()
 
     def getReturnValue(self):
-        return self._entities['returnValue']
+        return self._returnValue
 
     def getName(self):
-        return self._entities['name']
+        return self._name
 
     def __str__(self):
         return str(self.getReturnValue()) + ' ' + self.getName()
@@ -142,7 +147,7 @@ class CPPConstructor(object):
     def __init__(self, prototypeString):
         if re.search(CPPConstructor.getPattern(), prototypeString):
             self._match = re.search(CPPConstructor.getPattern(), prototypeString)
-            self._className = self._match.group(1)
+            self._name = self._match.group(1)
         else:
             raise ValueError("The given prototypeString is not a valid C++ constructor prototype.")
 
@@ -150,7 +155,7 @@ class CPPConstructor(object):
         return self._match.groups()
 
     def __str__(self):
-        return self._className
+        return self._name
 
     @staticmethod
     def getPattern():
