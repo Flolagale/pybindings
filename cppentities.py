@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import re
+import unittest
 
 
 class CPPClass(object):
@@ -87,11 +88,11 @@ class CPPValue(object):
 
     @staticmethod
     def getPattern():
-        return r'(const)?\s+(\w+)(::)?(\w+)?\s*(&\|*)?'
+        return r'\s*(const)?\s*(\w+)(::)?(\w+)?\s*(\&\|\*)?'
 
     @staticmethod
     def getPatternWithoutGroups():
-        return r'(?:const)?\s+\w+(?:::)?(?:\w+)?\s*(?:&\|*)?'
+        return r'\s*(?:const)?\s*\w+(?:::)?(?:\w+)?\s*(?:\&\|\*)?'
 
 
 class CPPMethod(object):
@@ -107,6 +108,7 @@ class CPPMethod(object):
     def __init__(self, prototypeString):
         if re.search(CPPMethod.getPattern(), prototypeString):
             self._match = re.search(CPPMethod.getPattern(), prototypeString)
+            print(self._match.groups())
 
             # Set default values.
             self._returnValue = None
@@ -115,6 +117,7 @@ class CPPMethod(object):
             # The first group is a CPPValue so build it.
             self._returnValue = CPPValue(self._match.group(1))
             self._name = self._match.group(2)
+            self._parameters = self._match.group(3)
         else:
             raise ValueError("The given prototypeString is not a valid C++ method prototype.")
 
@@ -130,9 +133,25 @@ class CPPMethod(object):
     def __str__(self):
         return str(self.getReturnValue()) + ' ' + self.getName()
 
+    # @staticmethod
+    # def getPattern():
+    #     return (r'\s*(' +
+    #         CPPValue.getPatternWithoutGroups() +
+    #         r')\s+(\w+)')
+
+    # @staticmethod
+    # def getPattern():
+    #     return (r'\s*(' +
+    #         CPPValue.getPatternWithoutGroups() +
+    #         r')\s+(\w+)\s*\(\s*(' +
+    #         CPPValue.getPatternWithoutGroups() +
+    #         r')?\s+(\w+)?\s*\)')
+
     @staticmethod
     def getPattern():
-        return r'\/\^\s*(' + CPPValue.getPatternWithoutGroups() + r')\s+(\w+)'
+        return (r'\s*(' +
+            CPPValue.getPatternWithoutGroups() +
+            r')\s+(\w+)')
 
 
 class CPPConstructor(object):
@@ -159,7 +178,7 @@ class CPPConstructor(object):
 
     @staticmethod
     def getPattern():
-        return r'\/\^\s*(\w+)\(\)'
+        return r'\s*(\w+)\(\)'
 
 
 class CPPDestructor(object):
@@ -186,4 +205,55 @@ class CPPDestructor(object):
 
     @staticmethod
     def getPattern():
-        return r'\/\^\s*~(\w+)\(\)'
+        return r'\s*~(\w+)\(\)'
+
+
+class CPPEntitiesTester(unittest.TestCase):
+    """Class to unit test al the CPPEntities."""
+    def testCPPMethodPatternWithoutParameters(self):
+        string = 'const std::string& getMessage() const'
+        print(string)
+        m = re.search(CPPMethod.getPattern(), string)
+        self.assertTrue(m)
+        print(m.group())
+
+    def testCPPMethodPatternWithParameters(self):
+        string = 'void setInteger(int integer)'
+        print(string)
+        m = re.search(CPPMethod.getPattern(), string)
+        self.assertTrue(m)
+        print(m.groups())
+
+    def testCPPValuePatternForRef(self):
+        string = 'const std::string&'
+        print(string)
+        m = re.search(CPPValue.getPattern(), string)
+        self.assertTrue(m)
+        print(m.groups())
+
+    def testCPPValuePatternForPointer(self):
+        string = 'const std::string*'
+        print(string)
+        m = re.search(CPPValue.getPattern(), string)
+        print(m.groups())
+        print(m.group())
+        self.assertTrue(m.group(5))
+        print(m.groups())
+
+    def testCPPValuePatternForConst(self):
+        string = 'conststring'
+        print(string)
+        m = re.search(CPPValue.getPattern(), string)
+        self.assertTrue(m)
+        print(m.groups())
+
+    def testCPPValuePatternForVoid(self):
+        string = 'void'
+        print(string)
+        m = re.search(CPPValue.getPattern(), string)
+        self.assertTrue(m)
+        print(m.groups())
+
+
+if __name__ == '__main__':
+    unittest.main()

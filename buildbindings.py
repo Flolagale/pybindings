@@ -29,21 +29,25 @@ class TagFile(object):
         """
         print('Retrieving methods for class ' + class_.getName() + '.')
         methodRegex = re.compile(r'^\s*~?\w+\s+.*\tf\tclass:' + class_.getName() + '$')
+        prototypeRegex = re.compile(r'\/\^(.+)\$\/;\"')
         for line in open(self._file):
             if methodRegex.search(line):
-                print(line)
+                # print(line)
                 # Get the prototype of the method, constructor or destructor
                 # contained in the line.
+                # TODO FIXME stripping the regex matched group make CPPMethod constructor fail!
+                prototype = prototypeRegex.search(line).group(1)
+                print(prototype)
                 try:
-                    method = CPPMethod(line.strip())
+                    method = CPPMethod(prototype)
                     class_.addMethod(method)
                 except ValueError:
                     try:
-                        constructor = CPPConstructor(line.strip())
+                        constructor = CPPConstructor(prototype)
                         class_.addConstructor(constructor)
                     except ValueError:
                         try:
-                            destructor = CPPDestructor(line.strip())
+                            destructor = CPPDestructor(prototype)
                             class_.addDestructor(destructor)
                         except ValueError:
                             raise Exception("The given line does not appear to ba a valid C++ prototype line at all...")
