@@ -50,7 +50,8 @@ class CPPValue(object):
             self._reference = False
             self._pointer = False
 
-            self._const = self._match.group(1)
+            if self._match.group(1):
+                self._const = self._match.group(1).strip()
             if self._match.group(3):
                 self._namespace = self._match.group(2)
                 self._type = self._match.group(4)
@@ -88,11 +89,13 @@ class CPPValue(object):
 
     @staticmethod
     def getPattern():
-        return r'\s*(const)?\s*(\w+)(::)?(\w+)?\s*(\&\|\*)?'
+        # The group will match 'const ', don't forget to strip it.
+        return r'\s*(const )?\s*(\w+)(::)?(\w+)?\s*(\&|\*)?'
 
     @staticmethod
     def getPatternWithoutGroups():
-        return r'\s*(?:const)?\s*\w+(?:::)?(?:\w+)?\s*(?:\&\|\*)?'
+        # The group will match 'const ', don't forget to strip it.
+        return r'\s*(?:const )?\s*\w+(?:::)?(?:\w+)?\s*(?:\&|\*)?'
 
 
 class CPPMethod(object):
@@ -139,19 +142,13 @@ class CPPMethod(object):
     #         CPPValue.getPatternWithoutGroups() +
     #         r')\s+(\w+)')
 
-    # @staticmethod
-    # def getPattern():
-    #     return (r'\s*(' +
-    #         CPPValue.getPatternWithoutGroups() +
-    #         r')\s+(\w+)\s*\(\s*(' +
-    #         CPPValue.getPatternWithoutGroups() +
-    #         r')?\s+(\w+)?\s*\)')
-
     @staticmethod
     def getPattern():
         return (r'\s*(' +
             CPPValue.getPatternWithoutGroups() +
-            r')\s+(\w+)')
+            r')\s+(\w+)\s*\(\s*(' +
+            CPPValue.getPatternWithoutGroups() +
+            r')?\s*(\w+)?\s*\)')
 
 
 class CPPConstructor(object):
