@@ -50,14 +50,18 @@ class CPPValue(object):
             self._reference = False
             self._pointer = False
 
+            # Handle the const character of the cpp value.
             if self._match.group(1):
-                self._const = self._match.group(1).strip()
+                self._const = True
+
             if self._match.group(3):
+                # This means that the current cpp value has a namespace.
                 self._namespace = self._match.group(2)
                 self._type = self._match.group(4)
                 self._reference = (self._match.group(5) == '&')
                 self._pointer = (self._match.group(5) == '*')
             else:
+                # Here the current cpp value doesn't have a namespace.
                 self._namespace = None
                 self._type = self._match.group(2)
                 self._reference = (self._match.group(3) == '&')
@@ -71,8 +75,14 @@ class CPPValue(object):
     def isConst(self):
         return self._const
 
+    def hasNamespace(self):
+        return bool(self._namespace)
+
     def getNamespace(self):
-        return self._namespace
+        if self.hasNamespace:
+            return self._namespace
+        else:
+            return ''
 
     def getType(self):
         return self._type
@@ -83,9 +93,16 @@ class CPPValue(object):
     def isPointer(self):
         return self._pointer
 
+    def toJSON(self):
+        j = {'const': self.isConst(),
+            'namespace': self.getNamespace(),
+            'type': self.getType(),
+            'reference': self.isReference(),
+            'pointer': self.isPointer()}
+        return j
+
     def __str__(self):
-        return (str(self.isConst()) + ' ' + str(self.getNamespace()) + ' ' +
-        str(self.getType()) + ' ' + str(self.isReference() or self.isPointer()))
+        return str(self.toJSON())
 
     @staticmethod
     def getPattern():
@@ -111,16 +128,35 @@ class CPPMethod(object):
     def __init__(self, prototypeString):
         if re.search(CPPMethod.getPattern(), prototypeString):
             self._match = re.search(CPPMethod.getPattern(), prototypeString)
-            print(self._match.groups())
 
             # Set default values.
             self._returnValue = None
             self._name = ''
+            self._parameters = []
+            self._const = False
 
-            # The first group is a CPPValue so build it.
+            # The first group is the return value of the cpp method,
+            # so build it as a CPPValue.
             self._returnValue = CPPValue(self._match.group(1))
+
+            # Then the name of the method itself.
             self._name = self._match.group(2)
-            self._parameters = self._match.group(3)
+
+            # The third group is the string found inside
+            # the parenthesis of the method prototype. So if this
+            # group is True, it contains the parameters of the
+            # method, hence build the corresponding CPPValue's if necessary.
+            if self._match.group(3):
+                # Replace the commas of the parameters by spaces if necessary.
+                # Then try to match as much as CPPValue's as possible.
+                values = re.findall(CPPValue.getPatternWithoutGroups(),
+                    self._match.group(3).replace(',', ' '))
+                for value in values:
+                    self._parameters.append(CPPValue(value))
+
+            # Handle the const character of the method.
+            if self._match.group(4):
+                self._const = True
         else:
             raise ValueError("The given prototypeString is not a valid C++ method prototype.")
 
@@ -133,8 +169,24 @@ class CPPMethod(object):
     def getName(self):
         return self._name
 
+    def isConst(self):
+        return self._const
+
+    def getParameters(self):
+        return self._parameters
+
+    def toJSON(self):
+        j = {'return': self.getReturnValue(),
+            'name': self.getName(),
+            'parameters': self.getParameters()}
+        return j
+
     def __str__(self):
-        return str(self.getReturnValue()) + ' ' + self.getName()
+        msg = str(self.getReturnValue()) + ' ' + self.getName() + ' '
+        for parameter in self._parameters:
+            msg += str(parameter) + ' '
+        msg += str(self._const)
+        return msg
 
     # @staticmethod
     # def getPattern():
@@ -146,9 +198,7 @@ class CPPMethod(object):
     def getPattern():
         return (r'\s*(' +
             CPPValue.getPatternWithoutGroups() +
-            r')\s+(\w+)\s*\(\s*(' +
-            CPPValue.getPatternWithoutGroups() +
-            r')?\s*(\w+)?\s*\)')
+            r')\s+(\w+)\s*\((.+)?\)\s*(const)?')
 
 
 class CPPConstructor(object):
@@ -209,48 +259,42 @@ class CPPEntitiesTester(unittest.TestCase):
     """Class to unit test al the CPPEntities."""
     def testCPPMethodPatternWithoutParameters(self):
         string = 'const std::string& getMessage() const'
-        print(string)
         m = re.search(CPPMethod.getPattern(), string)
         self.assertTrue(m)
-        print(m.group())
 
-    def testCPPMethodPatternWithParameters(self):
+    def testCPPMethodPatternWithParameter(self):
         string = 'void setInteger(int integer)'
-        print(string)
         m = re.search(CPPMethod.getPattern(), string)
         self.assertTrue(m)
-        print(m.groups())
 
     def testCPPValuePatternForRef(self):
         string = 'const std::string&'
-        print(string)
         m = re.search(CPPValue.getPattern(), string)
         self.assertTrue(m)
-        print(m.groups())
+        self.assertTrue(m.group(5) == '&')
 
     def testCPPValuePatternForPointer(self):
         string = 'const std::string*'
-        print(string)
         m = re.search(CPPValue.getPattern(), string)
-        print(m.groups())
-        print(m.group())
-        self.assertTrue(m.group(5))
-        print(m.groups())
+        self.assertTrue(m.group(5) == '*')
 
     def testCPPValuePatternForConst(self):
         string = 'conststring'
-        print(string)
         m = re.search(CPPValue.getPattern(), string)
         self.assertTrue(m)
-        print(m.groups())
+        self.assertFalse(m.group(1))
 
     def testCPPValuePatternForVoid(self):
         string = 'void'
-        print(string)
         m = re.search(CPPValue.getPattern(), string)
         self.assertTrue(m)
-        print(m.groups())
+        self.assertFalse(m.group(1))
+        self.assertFalse(m.group(4))
 
+    def testCPPMethod(self):
+        string = 'const std::string* doSomething(const Object& obj, std::string* str) const'
+        method = CPPMethod(string)
+        self.assertTrue(method)
 
 if __name__ == '__main__':
     unittest.main()

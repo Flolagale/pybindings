@@ -70,11 +70,11 @@ def generateTagsForCurrentDir(tagFilePath):
     Generate a tag file for all the C++ headers in the current directory.
     """
     print('Generating tags...')
+    # TODO Add some error messages if ctags is not available on the current machine.
     os.system('ctags --extra=+q --exclude=*.cpp --exclude=*.c --languages=C++ -f ' + tagFilePath + ' *')
 
 
 if __name__ == '__main__':
-    #pdb.set_trace()
     tagFilePath = 'pybindings.tags'
     generateTagsForCurrentDir(tagFilePath)
 
