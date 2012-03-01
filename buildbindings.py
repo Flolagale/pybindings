@@ -19,7 +19,7 @@ class TagFile(object):
         classRegex = re.compile(r'\tc$')
         for line in open(self._file):
             if classRegex.search(line):
-                # Get the tag name, its the name of the class.
+                # Get the tag name, it's the name of the class.
                 classes.append(line.strip().split()[0])
 
     def retrieveMethodsForClass(self, class_):
