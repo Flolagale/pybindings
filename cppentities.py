@@ -113,6 +113,7 @@ class CPPValue(object):
     def getPattern():
         # The group will match 'const ', don't forget to strip it.
         return r'\s*(const )?\s*(\w+)(::)?(\w+)?\s*(\&|\*)?\s*(\w+)?'
+        #(a)?(?<!a)((?:\s+|b)+)
 
     @staticmethod
     def getPatternWithoutGroups():
@@ -336,6 +337,14 @@ class CPPEntitiesTester(unittest.TestCase):
 
     def testCPPValueForPointer(self):
         string = 'const std::string * myStr'
+        value = CPPValue(string)
+        self.assertTrue(value)
+        self.assertTrue(value.isPointer())
+        self.assertFalse(value.isReference())
+        self.assertTrue(value.getName() == 'myStr')
+
+    def testCPPValueFor3Pointers(self):
+        string = 'const string ** * myStr'
         value = CPPValue(string)
         self.assertTrue(value)
         self.assertTrue(value.isPointer())
