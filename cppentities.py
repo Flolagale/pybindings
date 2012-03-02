@@ -24,6 +24,15 @@ class CPPClass(object):
     def addMethod(self, method):
         self._methods.append(method)
 
+    def getConstructors(self):
+        return self._constructors
+
+    def getDestructor(self):
+        return self._destructor
+
+    def getMethods(self):
+        return self._methods
+
     def __str__(self):
         string = ''
         for constructor in self._constructors:
@@ -360,6 +369,14 @@ class CPPEntitiesTester(unittest.TestCase):
 
     def testCPPValueForCopy(self):
         string = 'const std::string  myStr'
+        value = CPPValue(string)
+        self.assertTrue(value)
+        self.assertFalse(value.isPointer())
+        self.assertFalse(value.isReference())
+        self.assertTrue(value.getName() == 'myStr')
+
+    def testCPPValueForPointerOfPointer(self):
+        string = 'const std::string**  myStr'
         value = CPPValue(string)
         self.assertTrue(value)
         self.assertFalse(value.isPointer())
