@@ -30,6 +30,9 @@ class CPPClass(object):
     def getDestructor(self):
         return self._destructor
 
+    def hasDestructor(self):
+        return self._destructor
+
     def getMethods(self):
         return self._methods
 
@@ -49,8 +52,8 @@ class CPPValue(object):
     that is, a type and its attributes (const and/or pointer or reference).
     """
     def __init__(self, valueString):
-        if re.search(CPPValue.getPattern(), valueString):
-            self._match = re.search(CPPValue.getPattern(), valueString)
+        if re.match(CPPValue.getPattern(), valueString):
+            self._match = re.match(CPPValue.getPattern(), valueString)
 
             # Set default values.
             self._const = False
@@ -81,6 +84,9 @@ class CPPValue(object):
 
     def getMatchedGroups(self):
         return self._match.groups()
+
+    def getMatchedString(self):
+        return self._match.group()
 
     def isConst(self):
         return self._const
@@ -115,8 +121,11 @@ class CPPValue(object):
             'name': self._name}
         return j
 
+    def __repr__(self):
+        return self.toJSON()
+
     def __str__(self):
-        return str(self.toJSON())
+        return self.getMatchedString()
 
     @staticmethod
     def getPattern():
@@ -141,8 +150,8 @@ class CPPMethod(object):
     [const]? [namespace]? [return value] [reference or pointer]? [method name] [parameters]? [const]?
     """
     def __init__(self, prototypeString):
-        if re.search(CPPMethod.getPattern(), prototypeString):
-            self._match = re.search(CPPMethod.getPattern(), prototypeString)
+        if re.match(CPPMethod.getPattern(), prototypeString):
+            self._match = re.match(CPPMethod.getPattern(), prototypeString)
 
             # Set default values.
             self._returnValue = None
@@ -220,8 +229,8 @@ class CPPConstructor(object):
     [class name] [parameters]?
     """
     def __init__(self, prototypeString):
-        if re.search(CPPConstructor.getPattern(), prototypeString):
-            self._match = re.search(CPPConstructor.getPattern(), prototypeString)
+        if re.match(CPPConstructor.getPattern(), prototypeString):
+            self._match = re.match(CPPConstructor.getPattern(), prototypeString)
 
             # The first group is the name of the class.
             self._name = self._match.group(1)
@@ -291,14 +300,17 @@ class CPPDestructor(object):
     ~[class name]()
     """
     def __init__(self, prototypeString):
-        if re.search(CPPDestructor.getPattern(), prototypeString):
-            self._match = re.search(CPPDestructor.getPattern(), prototypeString)
+        if re.match(CPPDestructor.getPattern(), prototypeString):
+            self._match = re.match(CPPDestructor.getPattern(), prototypeString)
             self._name = self._match.group(1)
         else:
             raise ValueError("The given prototypeString is not a valid C++ destructor prototype.")
 
     def getMatchedGroups(self):
         return self._match.groups()
+
+    def getName(self):
+        return self._name
 
     def __str__(self):
         return '~' + self._name
@@ -312,37 +324,47 @@ class CPPEntitiesTester(unittest.TestCase):
     """Class to unit test al the CPPEntities."""
     def testCPPMethodPatternWithoutParameters(self):
         string = 'const std::string& getMessage() const'
-        m = re.search(CPPMethod.getPattern(), string)
+        m = re.match(CPPMethod.getPattern(), string)
         self.assertTrue(m)
 
     def testCPPMethodPatternWithParameter(self):
         string = 'void setInteger(int integer)'
-        m = re.search(CPPMethod.getPattern(), string)
+        m = re.match(CPPMethod.getPattern(), string)
         self.assertTrue(m)
 
     def testCPPValuePatternForRef(self):
         string = 'const std::string&'
-        m = re.search(CPPValue.getPattern(), string)
+        m = re.match(CPPValue.getPattern(), string)
         self.assertTrue(m)
         self.assertTrue(m.group(5) == '&')
 
     def testCPPValuePatternForPointer(self):
         string = 'const std::string*'
-        m = re.search(CPPValue.getPattern(), string)
+        m = re.match(CPPValue.getPattern(), string)
         self.assertTrue(m.group(5) == '*')
 
     def testCPPValuePatternForConst(self):
         string = 'conststring'
-        m = re.search(CPPValue.getPattern(), string)
+        m = re.match(CPPValue.getPattern(), string)
         self.assertTrue(m)
         self.assertFalse(m.group(1))
 
     def testCPPValuePatternForVoid(self):
         string = 'void'
-        m = re.search(CPPValue.getPattern(), string)
+        m = re.match(CPPValue.getPattern(), string)
         self.assertTrue(m)
         self.assertFalse(m.group(1))
         self.assertFalse(m.group(4))
+
+    def testCPPConstructorPattern(self):
+        string = 'Object() {}'
+        m = re.match(CPPConstructor.getPattern(), string)
+        self.assertTrue(m)
+
+    def testCPPConstructorPatternForDestructor(self):
+        string = '~Object() {}'
+        m = re.match(CPPConstructor.getPattern(), string)
+        self.assertFalse(m)
 
     def testCPPValueForPointer(self):
         string = 'const std::string * myStr'
@@ -352,13 +374,21 @@ class CPPEntitiesTester(unittest.TestCase):
         self.assertFalse(value.isReference())
         self.assertTrue(value.getName() == 'myStr')
 
-    def testCPPValueFor3Pointers(self):
-        string = 'const string ** * myStr'
-        value = CPPValue(string)
-        self.assertTrue(value)
-        self.assertTrue(value.isPointer())
-        self.assertFalse(value.isReference())
-        self.assertTrue(value.getName() == 'myStr')
+    # def testCPPValueForPointerOfPointer(self):
+    #     string = 'const std::string**  myStr'
+    #     value = CPPValue(string)
+    #     self.assertTrue(value)
+    #     self.assertFalse(value.isPointer())
+    #     self.assertFalse(value.isReference())
+    #     self.assertTrue(value.getName() == 'myStr')
+
+    # def testCPPValueFor3Pointers(self):
+    #     string = 'const string ** * myStr'
+    #     value = CPPValue(string)
+    #     self.assertTrue(value)
+    #     self.assertTrue(value.isPointer())
+    #     self.assertFalse(value.isReference())
+    #     self.assertTrue(value.getName() == 'myStr')
 
     def testCPPValueForReference(self):
         string = 'const std::string &myStr'
@@ -378,14 +408,6 @@ class CPPEntitiesTester(unittest.TestCase):
 
     def testCPPValueForCopy(self):
         string = 'const std::string  myStr'
-        value = CPPValue(string)
-        self.assertTrue(value)
-        self.assertFalse(value.isPointer())
-        self.assertFalse(value.isReference())
-        self.assertTrue(value.getName() == 'myStr')
-
-    def testCPPValueForPointerOfPointer(self):
-        string = 'const std::string**  myStr'
         value = CPPValue(string)
         self.assertTrue(value)
         self.assertFalse(value.isPointer())
@@ -415,6 +437,15 @@ class CPPEntitiesTester(unittest.TestCase):
         constructor = CPPConstructor(string)
         self.assertTrue(constructor)
         self.assertTrue(constructor.isCopyConstructor())
+
+    def testCPPConstructorForDestructor(self):
+        string = '~Object() {}'
+        constructor = None
+        try:
+            constructor = CPPConstructor(string)
+        except ValueError:
+            pass
+        self.assertFalse(constructor)
 
 if __name__ == '__main__':
     unittest.main()

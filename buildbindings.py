@@ -3,6 +3,7 @@ import os
 import subprocess
 import re
 from cppentities import *
+from writers import *
 
 
 class TagFile(object):
@@ -49,11 +50,10 @@ class TagFile(object):
                     except ValueError:
                         try:
                             destructor = CPPDestructor(prototype)
+                            print destructor
                             class_.addDestructor(destructor)
                         except ValueError:
                             raise Exception("The given line does not appear to ba a valid C++ prototype line at all...")
-                print("---------------------")
-        print(class_)
 
 
 def parseHeader(headerPath):
@@ -71,15 +71,18 @@ def generateTagsForCurrentDir(tagFilePath):
     Generate a tag file for all the C++ headers in the current directory.
     """
     print('Generating tags...')
-    try:
-        subprocess.check_call('ctags --extra=+q --exclude=*.cpp --exclude=*.c --languages=C++ -f ' + tagFilePath + ' *')
-    except Exception:
-        print('A problem occured during the generation of the tags.\n'
-            'Exuberant Ctags is probably not available on your system.\n'
-            'For Windows, you can find an installer here: http://ctags.sourceforge.net/\n'
-            'For Linux systems, install the corresponding package.\n'
-            'On Debian and Ubuntu it is called \'exuberant-ctags\'.')
-        raise
+    # FIXME why subprocess.check_call() does not work on ubuntu?
+    cmd = 'ctags --extra=+q --exclude=*.cpp --exclude=*.c --languages=C++ -f ' + tagFilePath + ' *'
+    os.system(cmd)
+    # try:
+        # subprocess.check_call(cmd)
+    # except Exception:
+    #     print('A problem occured during the generation of the tags.\n'
+    #         'Exuberant Ctags is probably not available on your system.\n'
+    #         'For Windows, you can find an installer here: http://ctags.sourceforge.net/\n'
+    #         'For Linux systems, install the corresponding package.\n'
+    #         'On Debian and Ubuntu it is called \'exuberant-ctags\'.')
+    #     raise
 
 
 if __name__ == '__main__':
@@ -94,3 +97,12 @@ if __name__ == '__main__':
     for className in classNames:
         newClass = CPPClass(className)
         tagFile.retrieveMethodsForClass(newClass)
+        classes.append(newClass)
+
+    # Filename of the C API file:
+    apiFilename = 'pyndings'
+    apiWriter = CAPIWriter(apiFilename + '.h')
+    for class_ in classes:
+        apiWriter.writeClass(class_)
+
+    os.remove(tagFilePath)
