@@ -1,5 +1,9 @@
 #include <string>
 
+/* This c++ header file is part of the pybindings project
+as a relevant c++ sample for testing purpose. It is no meant
+to do anything useful unless you really want a class that
+contains an integer and a string. */
 class Object
 {
 public:
