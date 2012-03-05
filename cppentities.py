@@ -36,6 +36,12 @@ class CPPClass(object):
     def getMethods(self):
         return self._methods
 
+    def hasMethods(self):
+        if len(self._methods) > 0:
+            return True
+        else:
+            return False
+
     def __str__(self):
         string = ''
         for constructor in self._constructors:
@@ -79,13 +85,15 @@ class CPPValue(object):
 
             # Check if some pointers were found.
             # This is legal only if no reference was found.
-            if self._match.group(5) and self._match.group(6):
-                raise Exception('A reference AND a pointer was found in the current value.\n'
-                                'Unless I made a mistake, please check your c++ code.')
+            if self._match.group(6):
+                self._pointers = len(re.findall(r'\*', self._match.group(6)))
+            if self._match.group(5) and self._pointers != 0:
+                raise Exception('A reference AND a pointer was found in the current value.\n' +
+                                'Unless I made a mistake, please check your c++ code.\n' +
+                                'Matched groups:\n' + str(self.getMatchedGroups()) +
+                                '\nMatched string:\n' + self.getMatchedString())
 
-            print self._match.group(6)
-            print len(re.findall(r'\*', self._match.group(6)))
-            self._pointers = len(re.findall(r'\*', self._match.group(6)))
+            # Name of the value.
             self._name = self._match.group(7)
         else:
             raise ValueError("The given prototypeString is not a valid C++ value.")
@@ -94,7 +102,7 @@ class CPPValue(object):
         return self._match.groups()
 
     def getMatchedString(self):
-        return self._match.group()
+        return self._match.group().strip()
 
     def isConst(self):
         return self._const
@@ -355,7 +363,7 @@ class CPPEntitiesTester(unittest.TestCase):
     def testCPPValuePatternForPointer(self):
         string = 'const std::string*'
         m = re.match(CPPValue.getPattern(), string)
-        self.assertTrue(m.group(5) == '*')
+        self.assertTrue(m.group(6) == '*')
 
     def testCPPValuePatternForConst(self):
         string = 'conststring'
@@ -390,21 +398,23 @@ class CPPEntitiesTester(unittest.TestCase):
         self.assertFalse(value.isReference())
         self.assertTrue(value.getName() == 'myStr')
 
-    # def testCPPValueForPointerOfPointer(self):
-    #     string = 'const std::string**  myStr'
-    #     value = CPPValue(string)
-    #     self.assertTrue(value)
-    #     self.assertFalse(value.isPointer())
-    #     self.assertFalse(value.isReference())
-    #     self.assertTrue(value.getName() == 'myStr')
+    def testCPPValueForPointerOfPointer(self):
+        string = 'const std::string**  myStr'
+        value = CPPValue(string)
+        self.assertTrue(value)
+        self.assertTrue(value.isPointer())
+        self.assertTrue(value.getNumberOfPointers() == 2)
+        self.assertFalse(value.isReference())
+        self.assertTrue(value.getName() == 'myStr')
 
-    # def testCPPValueFor3Pointers(self):
-    #     string = 'const string ** * myStr'
-    #     value = CPPValue(string)
-    #     self.assertTrue(value)
-    #     self.assertTrue(value.isPointer())
-    #     self.assertFalse(value.isReference())
-    #     self.assertTrue(value.getName() == 'myStr')
+    def testCPPValueFor3Pointers(self):
+        string = 'const string ** * myStr'
+        value = CPPValue(string)
+        self.assertTrue(value)
+        self.assertTrue(value.isPointer())
+        self.assertTrue(value.getNumberOfPointers() == 3)
+        self.assertFalse(value.isReference())
+        self.assertTrue(value.getName() == 'myStr')
 
     def testCPPValueForReference(self):
         string = 'const std::string &myStr'
@@ -432,31 +442,32 @@ class CPPEntitiesTester(unittest.TestCase):
 
     # # ----------
     # # Test CPPMethod.
-    # def testCPPMethod(self):
-    #     string = 'const std::string* doSomething(const Object& obj, std::string* str) const'
-    #     method = CPPMethod(string)
-    #     self.assertTrue(method)
+    def testCPPMethod(self):
+        string = 'const std::string* doSomething(const Object& obj, std::string* str) const'
+        method = CPPMethod(string)
+        self.assertTrue(method)
 
     # # ----------
     # # Test CPPConstructor.
-    # def testCPPConstructor(self):
-    #     string = 'Object(const Stuff& obj, std::string* str)'
-    #     constructor = CPPConstructor(string)
-    #     self.assertTrue(constructor)
-    #     self.assertTrue(len(constructor.getParameters()) == 2)
-    #     self.assertFalse(constructor.isCopyConstructor())
+    def testCPPConstructor(self):
+        string = 'Object(const Stuff& obj, std::string* str)'
+        constructor = CPPConstructor(string)
+        self.assertTrue(constructor)
+        self.assertTrue(len(constructor.getParameters()) == 2)
+        self.assertFalse(constructor.isCopyConstructor())
 
-    # def testCPPConstructorIsNotCopyConstructor(self):
-    #     string = 'Object(const Stuff& obj)'
-    #     constructor = CPPConstructor(string)
-    #     self.assertTrue(constructor)
-    #     self.assertFalse(constructor.isCopyConstructor())
+    def testCPPConstructorIsNotCopyConstructor(self):
+        string = 'Object(const Stuff& obj)'
+        constructor = CPPConstructor(string)
+        self.assertTrue(constructor)
+        self.assertTrue(len(constructor.getParameters()) == 1)
+        self.assertFalse(constructor.isCopyConstructor())
 
-    # def testCPPConstructorIsCopyConstructor(self):
-    #     string = 'Object(const Object& obj)'
-    #     constructor = CPPConstructor(string)
-    #     self.assertTrue(constructor)
-    #     self.assertTrue(constructor.isCopyConstructor())
+    def testCPPConstructorIsCopyConstructor(self):
+        string = 'Object(const Object& obj)'
+        constructor = CPPConstructor(string)
+        self.assertTrue(constructor)
+        self.assertTrue(constructor.isCopyConstructor())
 
     def testCPPConstructorForDestructor(self):
         string = '~Object() {}'

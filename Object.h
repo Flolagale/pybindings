@@ -13,6 +13,13 @@ public:
 
 	const std::string& getMessage() const {return this->m_message;}
 
+	int setContent(int integer, const std::string* message)
+	{	
+		this->m_int = integer;
+		this->m_message = *message;
+		return this->m_int;
+	}
+
 private:
 	int				m_integer;
 	std::string		m_message;

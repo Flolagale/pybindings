@@ -101,7 +101,7 @@ if __name__ == '__main__':
 
     # Filename of the C API file:
     apiFilename = 'pyndings'
-    apiWriter = CAPIWriter(apiFilename + '.h')
+    apiWriter = CAPIWriter(apiFilename)
     for class_ in classes:
         apiWriter.writeClass(class_)
 
