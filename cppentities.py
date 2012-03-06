@@ -220,6 +220,12 @@ class CPPMethod(object):
     def getParameters(self):
         return self._parameters
 
+    def hasParameters(self):
+        if len(self._parameters) > 0:
+            return True
+        else:
+            return False
+
     def toJSON(self):
         j = {'return': self.getReturnValue(),
             'name': self.getName(),
@@ -290,6 +296,12 @@ class CPPConstructor(object):
 
     def getParameters(self):
         return self._parameters
+
+    def hasParameters(self):
+        if len(self._parameters) > 0:
+            return True
+        else:
+            return False
 
     def isCopyConstructor(self):
         return self._isCopyConstructor
