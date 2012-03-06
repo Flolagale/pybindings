@@ -3,13 +3,40 @@ from cppentities import *
 
 
 class CAPIWriter(object):
-    """Object that can write the pure C API corresponding to a given CPPClass object."""
-    def __init__(self, filename):
-        """filename is the name of the files, without extension, to which the CAPIWriter will write text."""
+    """Object that can write the pure C API corresponding to a given CPPClass."""
+    def __init__(self, filename, includes):
+        """
+        filename is the name of the files, without extension,
+        to which the CAPIWriter will write text.
+        includes is the list of header files that must be included in the C API header.
+        """
         self._headerFilename = filename + '.h'
         self._implementationFilename = filename + '.cpp'
+        self._includes = includes
+
+    def writeClasses(self, classes):
+        """Main method of the class. Writes the CPPClass collection 'classes' to the file in a C format."""
         self.initializeDeclaration()
         self.initializeImplementation()
+        for class_ in classes:
+            self._writeClass(class_)
+        self.finalizeDeclaration()
+
+    def _writeClass(self, class_):
+        """Writes the CPPClass 'class_' to the file in a C format. This method is for internal use."""
+        print("Writing class '" + class_.getName() +
+            "' to files " + self._headerFilename +
+            " and " + self._implementationFilename + ":")
+        for constructor in class_.getConstructors():
+            self.writeConstructor(constructor)
+
+        if class_.hasDestructor():
+            self.writeDestructor(class_.getDestructor())
+
+        if class_.hasMethods():
+            self.hadBlankLine(self._headerFilename)
+            for method in class_.getMethods():
+                self.writeMethod(class_.getName(), method)
 
     def initializeDeclaration(self):
         """Adds its header to the C API header file."""
@@ -22,9 +49,11 @@ class CAPIWriter(object):
                     '#define PYBINDING_API __declspec(dllexport)\n'
                     '#else\n'
                     '#define PYBINDING_API __declspec(dllimport)\n'
-                    '#endif\n\n'
-                    '#include // Get file name from class!\n\n'
-                    'extern "C"\n'
+                    '#endif\n\n')
+            # Add the includes in alphabetical order.
+            for include in sorted(self._includes):
+                f.write('#include "' + include + '"\n')
+            f.write('\nextern "C"\n'
                     '{\n')
 
     def finalizeDeclaration(self):
@@ -50,24 +79,9 @@ class CAPIWriter(object):
         with open(filename, 'a') as f:
             f.write('\n')
 
-    def writeClass(self, class_):
-        """Writes the CPPClass 'class_' to the file in a C format."""
-        for constructor in class_.getConstructors():
-            self.writeConstructor(constructor)
-
-        if class_.hasDestructor():
-            self.writeDestructor(class_.getDestructor())
-
-        if class_.hasMethods():
-            self.hadBlankLine(self._headerFilename)
-            for method in class_.getMethods():
-                self.writeMethod(class_.getName(), method)
-
-        self.finalizeDeclaration()
-
     def writeConstructor(self, constructor):
         """Writes the CPPConstructor 'constructor' to the file in a C format."""
-        print('Writing constructor...')
+        print(self.indent() + 'Writing constructor...')
 
         # Handle declaration.
         decl = constructor.getName() + '_new('
@@ -88,7 +102,7 @@ class CAPIWriter(object):
 
     def writeDestructor(self, destructor):
         """Writes the CPPDestructor 'destructor' to the file in a C format."""
-        print('Writing destructor...')
+        print(self.indent() + 'Writing destructor...')
         # Handle declaration.
         decl = (destructor.getName() + '_delete(' +
                 destructor.getName() + '* obj)')
@@ -104,7 +118,7 @@ class CAPIWriter(object):
 
     def writeMethod(self, className, method):
         """Writes the CPPMethod 'method' to the file in a C format."""
-        print('Writing method...')
+        print(self.indent() + 'Writing method...')
         # Handle declaration.
         decl = (str(method.getReturnValue()) + ' ' + className + '_' + method.getName() + '(' +
                 className + '* obj')
@@ -157,4 +171,17 @@ class CAPIWriter(object):
     def indent(self, count=1):
         """Returns an indentation string corresponding to 'count', i.e., 4 spaces * count. By default, count is 1."""
         unitIndent = '    '
-        return unitIndent*count
+        return unitIndent * count
+
+
+class PyAPIWriter(object):
+    """Object that can write the Python wrapper corresponding to a given CPPClass."""
+    def __init__(self, filename, libraryName):
+        """
+        filename is the name of the file to which the Python
+        wrapper will be written, for instance 'myproject.py'.
+        libraryName is the shared library of dll that will contain
+        the bindings and hence that will be loaded by 'myproject.py'.
+        """
+        self._filename = filename
+        self._libraryName = libraryName

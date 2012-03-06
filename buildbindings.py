@@ -13,16 +13,19 @@ class TagFile(object):
     def __init__(self, tagFile):
         self._file = tagFile
 
-    def generateClassNames(self, classes):
+    def generateClassNamesAndFiles(self, classesAndFiles):
         """
-        Retrieve all the classes defined in the tagfile.
+        Retrieve all the classes defined in the tagfile and the *.h file they come from.
+
+        The parameter 'classes' is a list of tuples (className, classHeaderFileName)
         """
         print('Generating classes collection.')
         classRegex = re.compile(r'\tc$')
         for line in open(self._file):
             if classRegex.search(line):
-                # Get the tag name, it's the name of the class.
-                classes.append(line.strip().split()[0])
+                # The first word is the tag name, it's the name of the class.
+                # The second word is the header file it comes from.
+                classesAndFiles.append((line.strip().split()[0], line.strip().split()[1]))
 
     def retrieveMethodsForClass(self, class_):
         """
@@ -50,7 +53,6 @@ class TagFile(object):
                     except ValueError:
                         try:
                             destructor = CPPDestructor(prototype)
-                            print destructor
                             class_.addDestructor(destructor)
                         except ValueError:
                             raise Exception("The given line does not appear to ba a valid C++ prototype line at all...")
@@ -90,19 +92,25 @@ if __name__ == '__main__':
     generateTagsForCurrentDir(tagFilePath)
 
     tagFile = TagFile(tagFilePath)
-    classNames = []
-    tagFile.generateClassNames(classNames)
-    print('Classes found in tags file:\n' + str(classNames))
+    classesAndFiles = []
+    tagFile.generateClassNamesAndFiles(classesAndFiles)
+    print('Classes found in tags file:\n' + str(classesAndFiles))
     classes = []
-    for className in classNames:
-        newClass = CPPClass(className)
+    includes = []
+    for classAndFile in classesAndFiles:
+        newClass = CPPClass(classAndFile[0])
         tagFile.retrieveMethodsForClass(newClass)
         classes.append(newClass)
+        includes.append(classAndFile[1])
 
-    # Filename of the C API file:
+    # Write the C API file:
     apiFilename = 'pyndings'
-    apiWriter = CAPIWriter(apiFilename)
-    for class_ in classes:
-        apiWriter.writeClass(class_)
+    apiWriter = CAPIWriter(apiFilename, includes)
+    apiWriter.writeClasses(classes)
 
-    os.remove(tagFilePath)
+    # Write the Python wrapper file:
+    pyFilename = 'pyndings.py'
+    library = 'object.dll'
+    pyWriter = PyAPIWriter(pyFilename, library)
+
+    # os.remove(tagFilePath)
