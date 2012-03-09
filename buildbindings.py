@@ -112,5 +112,6 @@ if __name__ == '__main__':
     pyFilename = 'pyndings.py'
     library = 'object.dll'
     pyWriter = PyAPIWriter(pyFilename, library)
+    pyWriter.writeClasses(classes)
 
     # os.remove(tagFilePath)
