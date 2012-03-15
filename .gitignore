@@ -1,0 +1,11 @@
+# Untracked files:
+*.swp
+*.pyc
+pybindings.tags
+pyndings.cpp
+pyndings.h
+pyndings.py
+runit.sh
+tags
+test.py
+toto
