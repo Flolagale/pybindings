@@ -3,7 +3,8 @@ from cppentities import *
 
 
 class CodeWriterBase(object):
-    """ Abstract base class for the objects writing code APIs and wrappers of cppentities. """
+    """ Abstract base class for the objects
+    writing code APIs and wrappers of cppentities. """
     def writeClasses(self, classes):
         raise NotImplementedError
 
@@ -29,7 +30,8 @@ class CodeWriterBase(object):
 
 
 class PyAPIWriter(object):
-    """ Object that can write both the pure C API and the Python wrapper corresponding to a given CPPClass. """
+    """ Object that can write both the pure C API and the Python wrapper
+    corresponding to a given CPPClass. """
     def __init__(self, filename, includes):
         """
         - filename is the core of the names of the files, without extension, to
@@ -127,11 +129,13 @@ class PyAPIWriter(object):
             f.write('\n')
 
     def writeConstructor(self, constructor):
-        """ Writes the CPPConstructor 'constructor' to the file in a C format. """
+        """ Writes the C API and the Python wrapper corresponding to the
+        CPPConstructor 'constructor'. """
         print(self.indent() + 'Writing constructor...')
 
         # Handle declaration.
-        decl = constructor.getName() + '_new('
+        constructorName = constructor.getName() + '_new'
+        decl = constructorName + '('
         if constructor.hasParameters() > 0:
             decl = self.appendValuesToString(constructor.getParameters(), decl)
         decl += ')'
@@ -146,6 +150,19 @@ class PyAPIWriter(object):
         impl += ');\n}\n\n'
         with open(self._implementationFilename, 'a') as f:
             f.write(impl)
+
+        # Handle wrapper.
+        python = self.indent() + 'def __init__(self'
+        # If necessary, get a list of the constructor parameters names and
+        # append them to the wrapper __init__ string separated by commas.
+        if constructor.hasParameters():
+            parameterNames = [parameter.getName() for parameter in constructor.getParameters()]
+            python += ', '
+            python = self.appendValuesToString(parameterNames, python)
+        python += '):\n\n'
+        with open(self._filename, 'a') as f:
+            f.write(python)
+
 
     def writeDestructor(self, destructor):
         """ Writes the CPPDestructor 'destructor' to the file in a C format. """
@@ -192,8 +209,10 @@ class PyAPIWriter(object):
             f.write(impl)
 
     def appendValuesToString(self, values, string):
-        """ Append the CPPValues in values to the string in a C format.
-        Remember strings are imutable, so in fact returns a new string with the appended values. """
+        """ Append the strings in 'values' to the 'string' in a function or
+        method fashion. This means, all the values are separated from each othe
+        by a comma and a space.  Remember strings are imutable, so in fact this
+        method returns a new string with the appended values. """
         if len(values) == 0:
             raise Exception('The \'values\' collection must not be empty.')
         else:
