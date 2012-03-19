@@ -55,7 +55,8 @@ class TagFile(object):
                             destructor = CPPDestructor(prototype)
                             class_.addDestructor(destructor)
                         except ValueError:
-                            raise Exception("The given line does not appear to ba a valid C++ prototype line at all...")
+                            raise Exception('The given line does not appear to'
+                            'be a valid C++ prototype line at all...')
 
 
 def parseHeader(headerPath):
@@ -86,8 +87,7 @@ def generateTagsForCurrentDir(tagFilePath):
     #         'On Debian and Ubuntu it is called \'exuberant-ctags\'.')
     #     raise
 
-
-if __name__ == '__main__':
+def main():
     tagFilePath = 'pybindings.tags'
     generateTagsForCurrentDir(tagFilePath)
 
@@ -105,13 +105,13 @@ if __name__ == '__main__':
 
     # Write the C API file:
     apiFilename = 'pyndings'
-    apiWriter = CAPIWriter(apiFilename, includes)
+    library = 'object.dll'
+    apiWriter = PyAPIWriter(apiFilename, includes, library)
     apiWriter.writeClasses(classes)
 
-    # Write the Python wrapper file:
-    pyFilename = 'pyndings.py'
-    library = 'object.dll'
-    pyWriter = PyAPIWriter(pyFilename, library)
-    pyWriter.writeClasses(classes)
-
     # os.remove(tagFilePath)
+
+
+if __name__ == '__main__':
+    main()
+

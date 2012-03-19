@@ -2,37 +2,10 @@
 from cppentities import *
 
 
-class CodeWriterBase(object):
-    """ Abstract base class for the objects
-    writing code APIs and wrappers of cppentities. """
-    def writeClasses(self, classes):
-        raise NotImplementedError
-
-    def writeConstructor(self, constructor):
-        raise NotImplementedError
-
-    def writeDestructor(self, destructor):
-        raise NotImplementedError
-
-    def writeMethod(self, className, method):
-        raise NotImplementedError
-
-    def indent(self, count=1):
-        """ Returns an indentation string corresponding to 'count',
-        i.e., 4 spaces * count. By default, count is 1. """
-        unitIndent = '    '
-        return unitIndent * count
-
-    def hadBlankLine(self, filename):
-        """ Adds a blank line to the file corresponding to filename. """
-        with open(filename, 'a') as f:
-            f.write('\n')
-
-
 class PyAPIWriter(object):
     """ Object that can write both the pure C API and the Python wrapper
     corresponding to a given CPPClass. """
-    def __init__(self, filename, includes):
+    def __init__(self, filename, includes, libraryName):
         """
         - filename is the core of the names of the files, without extension, to
         which the PyAPIWriter will write text. For instance, this could be 'myproject'.
@@ -159,17 +132,19 @@ class PyAPIWriter(object):
             parameterNames = [parameter.getName() for parameter in constructor.getParameters()]
             python += ', '
             python = self.appendValuesToString(parameterNames, python)
-        python += '):\n\n'
-        with open(self._filename, 'a') as f:
+        python += ('):\n' +
+                self.indent(2) + 'self._obj = lib.' + constructorName + '()\n\n')
+        with open(self._wrapperFilename, 'a') as f:
             f.write(python)
 
 
     def writeDestructor(self, destructor):
-        """ Writes the CPPDestructor 'destructor' to the file in a C format. """
+        """ Writes the C API and the Python wrapper corresponding
+        to the CPPDestructor 'destructor'. """
         print(self.indent() + 'Writing destructor...')
         # Handle declaration.
-        decl = (destructor.getName() + '_delete(' +
-                destructor.getName() + '* obj)')
+        destructorName = destructor.getName() + '_delete'
+        decl = destructorName + '(' + destructor.getName() + '* obj)'
         with open(self._headerFilename, 'a') as f:
             f.write(self.indent() + 'void ' + decl + ';\n')
 
@@ -180,11 +155,20 @@ class PyAPIWriter(object):
         with open(self._implementationFilename, 'a') as f:
             f.write(impl)
 
+        # Handle wrapper.
+        python = (self.indent() + 'def __del__(self):\n' +
+                self.indent(2) + 'lib.' + destructorName + '(self._obj)\n\n')
+        with open(self._wrapperFilename, 'a') as f:
+            f.write(python)
+
+
     def writeMethod(self, className, method):
-        """ Writes the CPPMethod 'method' to the file in a C format. """
+        """ Writes the C API and the Python wrapper corresponding
+        to the CPPMethod 'method'. """
         print(self.indent() + 'Writing method...')
         # Handle declaration.
-        decl = (str(method.getReturnValue()) + ' ' + className + '_' + method.getName() + '(' +
+        methodName = className + '_' + method.getName()
+        decl = (str(method.getReturnValue()) + ' ' + methodName + '(' +
                 className + '* obj')
         if method.hasParameters():
             decl += ', '
@@ -197,16 +181,34 @@ class PyAPIWriter(object):
         impl = 'PYBINDING_API ' + decl + '\n{\n' + self.indent()
         impl = self.appendNullObjectTestToString(impl)
         impl += '\n\n' + self.indent() + 'return obj->' + method.getName() + '('
+        parameterNames = []
         if method.hasParameters():
             # Make a list of the parameters names and
             # add them to 'impl' separated by commas.
-            parameterNames = []
             for parameter in method.getParameters():
                 parameterNames.append(parameter.getName())
             impl = self.appendValuesToString(parameterNames, impl)
         impl += ');\n}\n\n'
         with open(self._implementationFilename, 'a') as f:
             f.write(impl)
+
+        # Handle wrapper.
+        python = self.indent() + 'def ' + method.getName() + '(self'
+        # If necessary, get a list of the constructor parameters names and
+        # append them to the wrapper string separated by commas.
+        if method.hasParameters():
+            parameterNames = [parameter.getName() for parameter in method.getParameters()]
+            python += ', '
+            python = self.appendValuesToString(parameterNames, python)
+        python += '):\n' + self.indent(2) + 'lib.' + methodName + '(self._obj'
+        # If necessary add the parameters to the implementation.
+        if len(parameterNames) != 0:
+            python += ', '
+            python = self.appendValuesToString(parameterNames, python)
+        python += ')\n\n'
+        with open(self._wrapperFilename, 'a') as f:
+            f.write(python)
+
 
     def appendValuesToString(self, values, string):
         """ Append the strings in 'values' to the 'string' in a function or
@@ -230,85 +232,14 @@ class PyAPIWriter(object):
 
     def appendNullObjectTestToString(self, string):
         """ Appends the null object function test to the string.
-        Remember strings are imutable, so in fact returns a new string with the appended values. """
+        Remember strings are imutable, so in fact returns a new
+        string with the appended values. """
         string += 'if(obj == NULL) nullObjectError(__FUNCTION__);'
         return string
 
-    # def indent(self, count=1):
-        # """ Returns an indentation string corresponding to 'count',
-        # i.e., 4 spaces * count. By default, count is 1. """
-        # unitIndent = '    '
-        # return unitIndent * count
-
-
-class OldPyAPIWriter(CodeWriterBase):
-    """ Object that can write the Python wrapper corresponding to a given CPPClass. """
-    def __init__(self, filename, libraryName):
-        """
-        filename is the name of the file to which the Python
-        wrapper will be written, for instance 'myproject.py'.
-        libraryName is the shared library of dll that will contain
-        the bindings and hence that will be loaded by 'myproject.py'.
-        """
-        self._filename = filename
-        self._libraryName = libraryName
-
-    def writeClasses(self, classes):
-        """ Main method of the class. Writes the Python wrapper of the CPPClass
-        collection 'classes' to the file. """
-        print('PyAPIWriter: start writing classes...')
-        self.initialize()
-        for class_ in classes:
-            self._writeClass(class_)
-
-    def _writeClass(self, class_):
-        """ Writes a Python wrapper for the CPPClass 'class_' to the file.
-        This method is for internal use. """
-        print("Writing class '" + class_.getName() +
-            "' to file " + self._filename)
-        self.initializeClass(class_)
-        for constructor in class_.getConstructors():
-            self.writeConstructor(constructor)
-
-        if class_.hasDestructor():
-            self.writeDestructor(class_.getDestructor())
-
-        if class_.hasMethods():
-            for method in class_.getMethods():
-                self.writeMethod(class_.getName(), method)
-
-    def initialize(self):
-        """ Adds its header to the Python wrapper file. """
-        with open(self._filename, 'w') as f:
-            f.write('#!/usr/bin/python\n'
-                    '""" File automatically generated by the pybindings project.\n'
-                    'This file implements a Python wrapper using ctypes for\n'
-                    'the C++ objects exported in the ' + self._libraryName + ' library. """\n'
-                    'from ctypes import *\n'
-                    'lib = cdll.LoadLibrary(\'' + self._libraryName + '\')\n\n')
-
-    def initializeClass(self, class_):
-        """ Initializes the Python wrapper for CPPClass 'class_'."""
-        with open(self._filename, 'a') as f:
-            f.write('class ' + class_.getName() + '(object):\n' +
-                    self.indent() + '""" Python wrapper for class ' +
-                    class_.getName() + ' from library ' + self._libraryName + '. """\n')
-
-    def writeConstructor(self, constructor):
-        """ Writes the Python wrapper of the CPPConstructor 'constructor' to the file. """
-        print(self.indent() + 'Writing constructor...')
-        with open(self._filename, 'a') as f:
-            f.write(self.indent() + 'def __init__(self):\n\n')
-
-    def writeDestructor(self, destructor):
-        """ Writes the Python wrapper of the CPPDestructor 'destructor' to the file."""
-        print(self.indent() + 'Writing destructor...')
-        with open(self._filename, 'a') as f:
-            f.write(self.indent() + 'def __del__(self):\n\n')
-
-    def writeMethod(self, className, method):
-        """ Writes the Python wrapper of the CPPMethod 'method' to the file."""
-        print(self.indent() + 'Writing method...')
-        with open(self._filename, 'a') as f:
-            f.write(self.indent() + 'def ' + method.getName() + '(self):\n\n' )
+    def indent(self, count=1):
+        """ Returns an indentation string corresponding to 'count',
+        i.e., 4 spaces * count. By default, count is 1. """
+        unitIndent = '    '
+        return unitIndent * count
 
