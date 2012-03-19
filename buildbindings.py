@@ -74,18 +74,18 @@ def generateTagsForCurrentDir(tagFilePath):
     Generate a tag file for all the C++ headers in the current directory.
     """
     print('Generating tags...')
-    # FIXME why subprocess.check_call() does not work on ubuntu?
+    # FIXME why subprocess.check_call() does not work on Ubuntu (works on Debian!)?
     cmd = 'ctags --extra=+q --exclude=*.cpp --exclude=*.c --languages=C++ -f ' + tagFilePath + ' *'
     os.system(cmd)
     # try:
         # subprocess.check_call(cmd)
     # except Exception:
-    #     print('A problem occured during the generation of the tags.\n'
-    #         'Exuberant Ctags is probably not available on your system.\n'
-    #         'For Windows, you can find an installer here: http://ctags.sourceforge.net/\n'
-    #         'For Linux systems, install the corresponding package.\n'
-    #         'On Debian and Ubuntu it is called \'exuberant-ctags\'.')
-    #     raise
+        # print('A problem occured during the generation of the tags.\n'
+            # 'Exuberant Ctags is probably not available on your system.\n'
+            # 'For Windows, you can find an installer here: http://ctags.sourceforge.net/\n'
+            # 'For Linux systems, install the corresponding package.\n'
+            # 'On Debian and Ubuntu it is called \'exuberant-ctags\'.')
+        # raise
 
 def main():
     tagFilePath = 'pybindings.tags'
