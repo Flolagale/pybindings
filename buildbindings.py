@@ -1,9 +1,9 @@
 #!/usr/bin/python
 import os
-import subprocess
+# import subprocess
 import re
-from cppentities import *
-from writers import *
+from cppentities import CPPClass, CPPConstructor, CPPDestructor, CPPMethod
+from writers import PyAPIWriter
 
 
 class TagFile(object):
@@ -40,7 +40,8 @@ class TagFile(object):
                 # print(line)
                 # Get the prototype of the method, constructor or destructor
                 # contained in the line.
-                # TODO FIXME stripping the regex matched group make CPPMethod constructor fail!
+                # TODO FIXME stripping the regex matched group make 
+                # the CPPMethod constructor fail!
                 prototype = prototypeRegex.search(line).group(1)
                 print(prototype)
                 try:
@@ -74,7 +75,8 @@ def generateTagsForCurrentDir(tagFilePath):
     Generate a tag file for all the C++ headers in the current directory.
     """
     print('Generating tags...')
-    # FIXME why subprocess.check_call() does not work on Ubuntu (works on Debian!)?
+    # FIXME why subprocess.check_call() does not work on Ubuntu but
+    # it works on Debian?
     cmd = 'ctags --extra=+q --exclude=*.cpp --exclude=*.c --languages=C++ -f ' + tagFilePath + ' *'
     os.system(cmd)
     # try:
@@ -109,7 +111,8 @@ def main():
     apiWriter = PyAPIWriter(apiFilename, includes, library)
     apiWriter.writeClasses(classes)
 
-    # os.remove(tagFilePath)
+    # Remove temporary files.
+    os.remove(tagFilePath)
 
 
 if __name__ == '__main__':
