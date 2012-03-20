@@ -4,7 +4,9 @@ import unittest
 
 
 class CPPClass(object):
-    """A whole C++ class with all its potential constructors, methods and destructor."""
+    """A whole C++ class with all its potential constructors,
+    methods and destructor.
+    """
     def __init__(self, className):
         # Set default values.
         self._name = className
@@ -53,8 +55,8 @@ class CPPClass(object):
 
 
 class CPPValue(object):
-    """
-    CPPValue represents a C++ value type, that is, a type and its attributes (const and/or pointer or reference).
+    """CPPValue represents a C++ value type, that is, a type and its
+    attributes (const and/or pointer or reference).
     """
     def __init__(self, valueString):
         if re.match(CPPValue.getPattern(), valueString):
@@ -96,7 +98,8 @@ class CPPValue(object):
             # Name of the value.
             self._name = self._match.group(7)
         else:
-            raise ValueError("The given prototypeString is not a valid C++ value.")
+            raise ValueError('The given prototypeString is '
+                            'not a valid C++ value.')
 
     def getMatchedGroups(self):
         return self._match.groups()
@@ -161,8 +164,8 @@ class CPPValue(object):
 
 
 class CPPMethod(object):
-    """
-    CPPMethod represents a C++ method generic prototype.
+    """ CPPMethod represents a C++ method generic prototype.
+
     For the moment, template methods are not handled.
     A C++ method is defined with the following fields:
     - A field is delimited by square braces '[]'
@@ -247,8 +250,8 @@ class CPPMethod(object):
 
 
 class CPPConstructor(object):
-    """
-    CPPConstructor represents a C++ method generic constructor.
+    """ CPPConstructor represents a C++ method generic constructor.
+
     A C++ constructor is defined with the following fields:
     - A field is delimited by square braces '[]'
     - An optional field has the tag '?'
@@ -326,6 +329,7 @@ class CPPConstructor(object):
 class CPPDestructor(object):
     """
     CPPDestructor represents a C++ method generic destructor.
+
     A C++ destructor is defined with the following fields:
     - A field is delimited by square braces '[]'
     - An optional field has the tag '?'
@@ -451,6 +455,14 @@ class CPPEntitiesTester(unittest.TestCase):
         self.assertFalse(value.isPointer())
         self.assertFalse(value.isReference())
         self.assertTrue(value.getName() == 'myStr')
+
+    def testCppValueForVoid(self):
+        string = 'void'
+        value = CPPValue(string)
+        self.assertTrue(value)
+        self.assertTrue(value.getName() == None)
+        print(value.getType())
+        self.assertTrue(value.getType() == 'void')
 
     # # ----------
     # # Test CPPMethod.

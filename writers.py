@@ -87,7 +87,8 @@ class PyAPIWriter(object):
                     '#include "' + self._headerFilename + '"\n\n' +
                     'static void nullObjectError(char* functionName)\n' +
                     '{\n' +
-                    self.indent() + 'std::string message("*** ERROR ***\\nThe given object pointer is NULL in function ");\n' +
+                    self.indent() + 'std::string message("*** ERROR ***\\n"\n' +
+                    self.indent(3) + '"The given object pointer is NULL in function ");\n' +
                     self.indent() + 'message += functionName;\n' +
                     self.indent() + 'std::cout << message.c_str() << std::endl;\n' +
                     '}\n\n')
@@ -120,10 +121,10 @@ class PyAPIWriter(object):
             decl = self.appendValuesToString(constructor.getParameters(), decl)
         decl += ')'
         with open(self._headerFilename, 'a') as f:
-            f.write(self.indent() + constructor.getName() + '* ' + decl + ';\n')
+            f.write(self.indent() + 'PYBINDING_API ' + constructor.getName() + '* ' + decl + ';\n')
 
         # Handle implementation.
-        impl = ('PYBINDING_API void ' + constructor.getName() + '* ' + decl + '\n' +
+        impl = ('void ' + constructor.getName() + '* ' + decl + '\n' +
                     '{\n' + self.indent() + 'return new ' + constructor.getName() + '(')
         if constructor.hasParameters():
             impl = self.appendValuesToString(constructor.getParameters(), impl)
@@ -154,10 +155,10 @@ class PyAPIWriter(object):
         destructorName = destructor.getName() + '_delete'
         decl = destructorName + '(' + destructor.getName() + '* obj)'
         with open(self._headerFilename, 'a') as f:
-            f.write(self.indent() + 'void ' + decl + ';\n')
+            f.write(self.indent() + 'PYBINDING_API ' + decl + ';\n')
 
         # Handle implementation.
-        impl = 'PYBINDING_API void ' + decl + '\n{\n' + self.indent()
+        impl = 'void ' + decl + '\n{\n' + self.indent()
         impl = self.appendNullObjectTestToString(impl)
         impl += '\n\n' + self.indent() + 'delete obj; obj = NULL;\n}\n\n'
         with open(self._implementationFilename, 'a') as f:
@@ -184,12 +185,16 @@ class PyAPIWriter(object):
             decl = self.appendValuesToString(method.getParameters(), decl)
         decl += ')'
         with open(self._headerFilename, 'a') as f:
-            f.write(self.indent() + decl + ';\n')
+            f.write(self.indent() + 'PYBINDING_API ' + decl + ';\n')
 
         # Handle implementation.
-        impl = 'PYBINDING_API ' + decl + '\n{\n' + self.indent()
+        impl = decl + '\n{\n' + self.indent()
         impl = self.appendNullObjectTestToString(impl)
-        impl += '\n\n' + self.indent() + 'return obj->' + method.getName() + '('
+        impl += '\n\n' + self.indent()
+        # If there is non-void return value, return something indeed.
+        if method.getReturnValue().getType() != 'void':
+            impl += 'return '
+        impl += 'obj->' + method.getName() + '('
         parameterNames = []
         if method.hasParameters():
             # Make a list of the parameters names and
