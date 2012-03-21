@@ -45,6 +45,11 @@ class PyAPIWriter(object):
             "' to files " + self._headerFilename +
             ", " + self._implementationFilename +
             " and " + self._wrapperFilename + ":")
+
+        # First initialize the class implementation of the Python wrapper.
+        with open(self._wrapperFilename, 'a') as f:
+            f.write('class ' + class_.getName() + '(object):\n')
+
         for constructor in class_.getConstructors():
             self.writeConstructor(constructor)
 
@@ -145,7 +150,6 @@ class PyAPIWriter(object):
         with open(self._wrapperFilename, 'a') as f:
             f.write(python)
 
-
     def writeDestructor(self, destructor):
         """Write the C API and the Python wrapper
         corresponding to the CPPDestructor 'destructor'.
@@ -170,7 +174,6 @@ class PyAPIWriter(object):
         with open(self._wrapperFilename, 'a') as f:
             f.write(python)
 
-
     def writeMethod(self, className, method):
         """Write the C API and the Python wrapper
         corresponding to the CPPMethod 'method'.
@@ -191,7 +194,8 @@ class PyAPIWriter(object):
         impl = decl + '\n{\n' + self.indent()
         impl = self.appendNullObjectTestToString(impl)
         impl += '\n\n' + self.indent()
-        # If there is non-void return value, return something indeed.
+        # If there is non-void return value, add the 'return' statement
+        # to the implementation string.
         if method.getReturnValue().getType() != 'void':
             impl += 'return '
         impl += 'obj->' + method.getName() + '('
@@ -214,7 +218,12 @@ class PyAPIWriter(object):
             parameterNames = [parameter.getName() for parameter in method.getParameters()]
             python += ', '
             python = self.appendValuesToString(parameterNames, python)
-        python += '):\n' + self.indent(2) + 'lib.' + methodName + '(self._obj'
+        python += '):\n' + self.indent(2)
+        # If there is non-void return value, add the 'return' statement
+        # to the wrapper string.
+        if method.getReturnValue().getType() != 'void':
+            python += 'return '
+        python += 'lib.' + methodName + '(self._obj'
         # If necessary add the parameters to the implementation.
         if len(parameterNames) != 0:
             python += ', '
@@ -222,7 +231,6 @@ class PyAPIWriter(object):
         python += ')\n\n'
         with open(self._wrapperFilename, 'a') as f:
             f.write(python)
-
 
     def appendValuesToString(self, values, string):
         """Append the strings in 'values' to the 'string' in a function or

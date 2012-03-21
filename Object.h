@@ -7,24 +7,30 @@ contains an integer and a string. */
 class Object
 {
 public:
-	Object()
-		: m_integer(2), m_message("Hello Kitty!") {}
-	Object(const Object& original)
-		: m_integer(original.m_integer), m_message(original.m_message) {}
-	~Object() {}
+    Object()
+        : m_integer(2), m_message("Hello Kitty!") {}
+    Object(const Object& original)
+        : m_integer(original.m_integer), m_message(original.m_message) {}
+    ~Object() {}
 
-	void setInteger(int integer) {this->m_integer = integer;}
+    void setInteger(int integer) {this->m_integer = integer;}
 
-	const std::string& getMessage() const {return this->m_message;}
+    const std::string& getMessage() const {return this->m_message;}
 
-	int setContent(int integer, const std::string* message)
-	{	
-		this->m_int = integer;
-		this->m_message = *message;
-		return this->m_int;
-	}
+    int setContent(int integer, const std::string* message)
+    {
+        this->m_int = integer;
+        this->m_message = *message;
+        return this->m_int;
+    }
+
+    void fillStringWithMessage(std::string** message)
+    {
+        delete *message;
+        *message = new std::string(this->m_message);
+    }
 
 private:
-	int				m_integer;
-	std::string		m_message;
+    int             m_integer;
+    std::string     m_message;
 };
