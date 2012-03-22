@@ -358,7 +358,7 @@ class CPPDestructor(object):
 
 
 class CPPEntitiesTester(unittest.TestCase):
-    """Class to unit test al the CPPEntities."""
+    """Class to unit test all the CPPEntities."""
     # Test patterns.
     def testCPPMethodPatternWithoutParameters(self):
         string = 'const std::string& getMessage() const'
