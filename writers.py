@@ -57,7 +57,7 @@ class PyAPIWriter(object):
             self.writeDestructor(class_.getDestructor())
 
         if class_.hasMethods():
-            self.hadBlankLine(self._headerFilename)
+            self.addBlankLine(self._headerFilename)
             for method in class_.getMethods():
                 self.writeMethod(class_.getName(), method)
 
@@ -108,7 +108,7 @@ class PyAPIWriter(object):
                     'from ctypes import cdll\n'
                     'lib = cdll.LoadLibrary(\'' + self._libraryName + '\')\n\n')
 
-    def hadBlankLine(self, filename):
+    def addBlankLine(self, filename):
         """Add a blank line to the file corresponding to filename."""
         with open(filename, 'a') as f:
             f.write('\n')
