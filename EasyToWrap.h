@@ -4,14 +4,14 @@
 as a relevant c++ sample for testing purpose. It is no meant
 to do anything useful unless you really want a class that
 contains an integer and a string. */
-class Object
+class EasyToWrap
 {
 public:
-    Object()
+    EasyToWrap()
         : m_integer(2), m_message("Hello Kitty!") {}
-    Object(const Object& original)
+    EasyToWrap(const EasyToWrap& original)
         : m_integer(original.m_integer), m_message(original.m_message) {}
-    ~Object() {}
+    ~EasyToWrap() {}
 
     void setInteger(int integer) {this->m_integer = integer;}
 
@@ -19,9 +19,9 @@ public:
 
     int setContent(int integer, const std::string* message)
     {
-        this->m_int = integer;
+        this->m_integer = integer;
         this->m_message = *message;
-        return this->m_int;
+        return this->m_integer;
     }
 
     void fillStringWithMessage(std::string** message)

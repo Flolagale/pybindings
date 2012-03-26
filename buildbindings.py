@@ -96,7 +96,9 @@ def main():
     tagFile = TagFile(tagFilePath)
     classesAndFiles = []
     tagFile.generateClassNamesAndFiles(classesAndFiles)
-    print('Classes found in tags file:\n' + str(classesAndFiles))
+    print('Classes found in tags file:')
+    for classAndFile in classesAndFiles:
+        print('    ' + classAndFile[0] + ' from file ' + classAndFile[1])
     classes = []
     includes = []
     for classAndFile in classesAndFiles:
@@ -107,12 +109,12 @@ def main():
 
     # Write the C API file:
     apiFilename = 'pyndings'
-    library = 'object.dll'
+    library = 'libpyndings.so'
     apiWriter = PyAPIWriter(apiFilename, includes, library)
     apiWriter.writeClasses(classes)
 
     # Remove temporary files.
-    os.remove(tagFilePath)
+    # os.remove(tagFilePath)
 
 
 if __name__ == '__main__':
