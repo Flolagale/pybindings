@@ -4,7 +4,8 @@ import unittest
 
 
 class CPPClass(object):
-    """A whole C++ class with all its potential constructors,
+    """
+    A whole C++ class with all its potential constructors,
     methods and destructor.
     """
     def __init__(self, className):
@@ -55,7 +56,8 @@ class CPPClass(object):
 
 
 class CPPValue(object):
-    """CPPValue represents a C++ value type, that is, a type and its
+    """
+    CPPValue represents a C++ value type, that is, a type and its
     attributes (const and/or pointer or reference).
     """
     def __init__(self, valueString):
@@ -164,7 +166,8 @@ class CPPValue(object):
 
 
 class CPPMethod(object):
-    """ CPPMethod represents a C++ method generic prototype.
+    """
+    CPPMethod represents a C++ method generic prototype.
 
     For the moment, template methods are not handled.
     A C++ method is defined with the following fields:
@@ -250,7 +253,8 @@ class CPPMethod(object):
 
 
 class CPPConstructor(object):
-    """ CPPConstructor represents a C++ method generic constructor.
+    """
+    CPPConstructor represents a C++ method generic constructor.
 
     A C++ constructor is defined with the following fields:
     - A field is delimited by square braces '[]'
@@ -464,15 +468,15 @@ class CPPEntitiesTester(unittest.TestCase):
         print(value.getType())
         self.assertTrue(value.getType() == 'void')
 
-    # # ----------
-    # # Test CPPMethod.
+    # ----------
+    # Test CPPMethod.
     def testCPPMethod(self):
         string = 'const std::string* doSomething(const Object& obj, std::string* str) const'
         method = CPPMethod(string)
         self.assertTrue(method)
 
-    # # ----------
-    # # Test CPPConstructor.
+    # ----------
+    # Test CPPConstructor.
     def testCPPConstructor(self):
         string = 'Object(const Stuff& obj, std::string* str)'
         constructor = CPPConstructor(string)
