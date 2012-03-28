@@ -5,4 +5,5 @@ The project is in alpha phase for now, but you should be able to generate compil
 To test it, clone or download the repository and run the buildbindings.py script.
 It will invoke ctags to generate a tag file of the C/C++ headers present in the directory.
 Then the tag file is parsed to extract the structure of the C++ code.
-From this, a pure C API of the C++ objects is built and a Python wrapper is written to be able to call this API with the ctypes Python module. You can then build it with the Makefile.
+From this, a pure C API of the C++ objects is built and a Python wrapper is written to be able
+to call this API with the ctypes Python module. You can then build it with the Makefile.
