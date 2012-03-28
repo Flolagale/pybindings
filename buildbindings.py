@@ -40,7 +40,7 @@ class TagFile(object):
                 # print(line)
                 # Get the prototype of the method, constructor or destructor
                 # contained in the line.
-                # TODO FIXME stripping the regex matched group make 
+                # FIXME stripping the regex matched group make 
                 # the CPPMethod constructor fail!
                 prototype = prototypeRegex.search(line).group(1)
                 print(prototype)
@@ -114,7 +114,7 @@ def main():
     apiWriter.writeClasses(classes)
 
     # Remove temporary files.
-    # os.remove(tagFilePath)
+    os.remove(tagFilePath)
 
 
 if __name__ == '__main__':

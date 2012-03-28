@@ -3,13 +3,11 @@ CC=g++
 CFLAGS=-W -Wall -ansi -pedantic -fPIC
 LDFLAGS=
 
-all: pynding
+all: pyndings
 
-pynding: *.h *.cpp
-	$(CC) $(CFLAGS) -shared *.h *.cpp -o libpynding.so
+pyndings: *.h *.cpp
+	$(CC) $(CFLAGS) -shared *.h *.cpp -o libpyndings.so
 
 clean:
-	rm *.o
+	rm *.o libpyndings.so
 
-mrproper: clean
-	rm pynding.so
