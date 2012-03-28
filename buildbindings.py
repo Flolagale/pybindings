@@ -40,7 +40,7 @@ class TagFile(object):
                 # print(line)
                 # Get the prototype of the method, constructor or destructor
                 # contained in the line.
-                # TODO FIXME stripping the regex matched group make 
+                # FIXME stripping the regex matched group make 
                 # the CPPMethod constructor fail!
                 prototype = prototypeRegex.search(line).group(1)
                 print(prototype)
@@ -96,7 +96,9 @@ def main():
     tagFile = TagFile(tagFilePath)
     classesAndFiles = []
     tagFile.generateClassNamesAndFiles(classesAndFiles)
-    print('Classes found in tags file:\n' + str(classesAndFiles))
+    print('Classes found in tags file:')
+    for classAndFile in classesAndFiles:
+        print('    ' + classAndFile[0] + ' from file ' + classAndFile[1])
     classes = []
     includes = []
     for classAndFile in classesAndFiles:
@@ -107,7 +109,7 @@ def main():
 
     # Write the C API file:
     apiFilename = 'pyndings'
-    library = 'object.dll'
+    library = 'libpyndings.so'
     apiWriter = PyAPIWriter(apiFilename, includes, library)
     apiWriter.writeClasses(classes)
 
