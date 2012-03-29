@@ -1,6 +1,6 @@
 Automatically builds Python bindings from some (well formatted!) C++ project.
 
-The project is in alpha phase for now, but you should be able to generate compilable stuff.
+The project is in alpha stage for now, but you should be able to generate compilable stuff.
 
 To test it, clone or download the repository and run the buildbindings.py script.
 It will invoke ctags to generate a tag file of the C/C++ headers present in the directory.
