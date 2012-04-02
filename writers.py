@@ -271,7 +271,8 @@ class PyAPIWriter(object):
 
         # Handle wrapper.
         python = (self.indent() + 'def __del__(self):\n' +
-                self.indent(2) + 'LIB.' + destructorName + '(self._obj)\n\n')
+                self.indent(2) + 'if hasattr(self, \'_obj\'):\n' +
+                self.indent(3) + 'LIB.' + destructorName + '(self._obj)\n\n')
         with open(self._wrapperFilename, 'a') as f:
             f.write(python)
 
@@ -279,7 +280,7 @@ class PyAPIWriter(object):
         python = (self.indent() + 'def testDestructor(self):\n' +
                 self.indent(2) + 'obj = ' + destructor.getName() + '()\n' +
                 self.indent(2) + 'self.assertTrue(obj)\n' +
-                self.indent(2) + 'obj.__del__()\n' +
+                self.indent(2) + 'obj = None\n' +
                 self.indent(2) + 'self.assertFalse(obj)\n\n')
         with open(self._testerFilename, 'a') as f:
             f.write(python)
