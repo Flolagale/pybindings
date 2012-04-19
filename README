@@ -7,3 +7,5 @@ It will invoke ctags to generate a tag file of the C/C++ headers present in the 
 Then the tag file is parsed to extract the structure of the C++ code.
 From this, a pure C API of the C++ objects is built and a Python wrapper is written to be able to call this API with the ctypes Python module. You can then build it with the Makefile.
 
+Note that pybindings depends on exuberant ctags. An installer exists for Windows and packages are available for all common Linux distributions.
+
